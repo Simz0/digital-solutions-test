@@ -9,5 +9,6 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser                               # non-root turn0search6
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN npm run build
 EXPOSE 8443
 CMD ["npm", "run", "start"]

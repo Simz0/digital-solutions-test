@@ -5,7 +5,8 @@
   "main": "app.js",
   "scripts": {
     "dev": "nodemon app.ts",
-    "start": "node app.ts"
+    "build": "tsc --project tsconfig.json",
+    "start": "node dist/app.js"
   },
   "keywords": [
     "RestAPI"

@@ -9,6 +9,7 @@
     "src/**/*.spec"
   ],
   "compilerOptions": {
+    "outDir": "./dist",
     "strict": true,
     "module": "NodeNext",
     "target": "es2017",

@@ -37,6 +37,7 @@ const props = defineProps<{
 const emit = defineEmits<{
     (e: 'toggle', item: TableObject): void
 }>()
+console.log(props, emit)
 </script>
 
 <style scoped>
