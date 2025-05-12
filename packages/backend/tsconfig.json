@@ -1,0 +1,27 @@
+{
+  "include": [
+    "src/**/*",
+    "config.ts"
+  ],
+  "exclude" : [
+    "node_modules",
+    "src/**/*.test",
+    "src/**/*.spec"
+  ],
+  "compilerOptions": {
+    "strict": true,
+    "module": "NodeNext",
+    "target": "es2017",
+    "baseUrl": "./",
+    "paths": {
+      "#*": [
+        "./src/*"
+      ]
+    },
+    "esModuleInterop": true,
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "skipLibCheck": true
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "digital-solutions-test",
+  "version": "1.0.0",
+  "description": "Тестовое задание для ООО \"Цифровые решения\"",
+  "main": "app.js",
+  "scripts": {
+    "test": "dev"
+  },
+  "keywords": [
+    "RestAPI",
+    "Express",
+    "Pagination",
+    "Filtres",
+    "Pet"
+  ],
+  "author": "Simz0",
+  "license": "ISC"
+}
