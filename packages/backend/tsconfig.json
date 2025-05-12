@@ -10,7 +10,7 @@
   ],
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "../backend",
+    "rootDir": "./src",
     "strict": true,
     "module": "NodeNext",
     "target": "es2017",
