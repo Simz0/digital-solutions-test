@@ -1,5 +1,5 @@
 import express, {Router} from 'express'
-import { DataController } from './src/DataController'
+import { DataController } from './DataController'
 
 const router = Router()
 
