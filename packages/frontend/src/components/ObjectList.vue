@@ -5,6 +5,7 @@
             <h3>Выбранные элементы</h3>
             <draggableComponent 
                 v-model="selected" 
+                item-key="id"
                 group="{name: 'items', pull: 'clone', put: true}"
                 @end="saveState"
                 class="selected-list"
@@ -26,8 +27,8 @@
             <draggableComponent 
                 v-model="localItems" 
                 handle=".drag-handle" 
-                item-key="uuid" 
-                @end="saveState"
+                item-key="id" 
+                @end="onDragEnd"
                 class="vertical-list"
                 group="{name: 'items', pull: 'clone', put: true}"
                 ghost-class="ghost"
@@ -55,12 +56,11 @@ import { ref, onMounted } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 import ObjectCard from './ObjectCard.vue'
 import SmallCard from './SmallCard.vue'
-import { fetchItems } from '../api/items'
-import type { TableObject, FilterCriteria } from '../types'
+import { fetchItems, dataElementsSequensUpdate, dataElementsSequensUpdateBatch } from '../api/items'
+import type { TableObject, FilterCriteria, UpdatePositions } from '../types'
 import draggableComponent from 'vuedraggable'
 
 const page = ref(1)
-// const items = ref<TableObject[]>([])
 const haveMore = ref(false)
 const searchQuery = ref('')
 
@@ -71,22 +71,36 @@ const selected = useLocalStorage<TableObject[]>('selected', [])
 const originalPositions = useLocalStorage<Record<string, number>>('item-positions', {});
 
 function toggleSelect(item: TableObject) {
-    const selectedIndex = selected.value.findIndex(i => i.uuid === item.uuid);
-    const localIndex = localItems.value.findIndex(i => i.uuid === item.uuid);
+    const selectedIndex = selected.value.findIndex(i => i.id === item.id);
+    const localIndex = localItems.value.findIndex(i => i.id === item.id);
     
     if (selectedIndex > -1) {
         // Восстанавливаем позицию из оригинального положения
-        const originalIndex = originalPositions.value[item.uuid] ?? localItems.value.length;
+        const originalIndex = originalPositions.value[item.id] ?? localItems.value.length;
         selected.value.splice(selectedIndex, 1);
         localItems.value.splice(originalIndex, 0, item);
-        delete originalPositions.value[item.uuid];
+        delete originalPositions.value[item.id];
     } else {
         // Сохраняем оригинальную позицию перед удалением
         if (localIndex > -1) {
-            originalPositions.value[item.uuid] = localIndex;
+            originalPositions.value[item.id] = localIndex;
             localItems.value.splice(localIndex, 1);
+            Object.keys(originalPositions.value).forEach(key => {
+                const pos = originalPositions.value[key]
+                if (pos > localIndex) {
+                    originalPositions.value[key] = pos - 1
+                }
+            })
+            selected.value.push(item);
+        } else {
+            const restoreIndex = Math.min(
+                originalPositions.value[item.id] ?? localItems.value.length,
+                localItems.value.length
+            )
+            selected.value = selected.value.filter(i => i.id !== item.id)
+            localItems.value.splice(restoreIndex, 0, item)
+            delete originalPositions.value[item.id]
         }
-        selected.value.push(item);
     }
     
     // Форсируем обновление
@@ -95,11 +109,32 @@ function toggleSelect(item: TableObject) {
 }
 
 function isSelected(item: TableObject) {
-    return selected.value.some(i => i.uuid === item.uuid)
+    return selected.value.some(i => i.id === item.id)
 }
 
 function saveState() {
 
+}
+
+async function onDragEnd(event: { oldIndex: number, newIndex: number}) {
+    const movedItem = localItems.value[event.oldIndex]
+
+    try {
+        await dataElementsSequensUpdate(
+            {
+                movedId: movedItem.id, 
+                newPosition: event.newIndex
+            }
+        )
+
+        const updateItems = [...localItems.value]
+        const [removed] = updateItems.splice(event.oldIndex, 1)
+        updateItems.splice(event.newIndex, 0, removed)
+        localItems.value = updateItems
+    } catch (error) {
+        console.error('Ошибка сохранения порядка: ', error)
+        localItems.value = [...localItems.value]
+    }
 }
 
 async function fetchData() {

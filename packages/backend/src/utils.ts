@@ -4,22 +4,27 @@ import {faker} from '@faker-js/faker'
 export type TableObject = {
     name: string,
     value: number,
-    uuid: string
+    id: number,
+    order: number
 }
 
 
-const generateValue = (): TableObject => {
+const generateValue = (order: number): TableObject => {
     const newValue: TableObject = {
         name: faker.person.fullName(),
         value: Math.random() * 1000000,
-        uuid: uuidv4()
+        id: order,
+        order: order
     }
 
     return newValue
 }
 
 const makeList = (range=1000000): TableObject[] => {
-    return Array.from({ length: range }, () => generateValue())
+    return Array.from({ length: range }, (_, i) => generateValue(i))
 }
 
-export const allItem: TableObject[] = makeList()
+export function updateAllItems(items: TableObject[]): void {
+    allItem = items
+}
+export let allItem: TableObject[] = makeList()

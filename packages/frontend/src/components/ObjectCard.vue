@@ -19,7 +19,7 @@
         <div class="card-content" @click.prevent="$emit('toggle', item)">
             <h3>{{ item.name }}</h3>
             <p>{{ item.value }}</p>
-            <small>{{ item.uuid }}</small>
+            <small>{{ item.id }}</small>
         </div>
     </div>
 </template>

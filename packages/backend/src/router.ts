@@ -14,6 +14,10 @@ router.get("/data/length", ctrl.getDataLength);
 // GET /data/page?page=2
 router.get("/data/page", ctrl.getPaginateData);
 
+// POST /data/update {indexFirst: number, indexNext:number}
+router.put("/data/update", ctrl.updatePositions)
+router.put("/data/update/batch", ctrl.updateMultiplePostions)
+
 // POST /data/filter   { uuid?:..., name?:..., value?:... }
 router.post("/data/filter", ctrl.getFilteredData);
 

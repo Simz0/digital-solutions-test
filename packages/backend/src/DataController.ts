@@ -1,4 +1,4 @@
-import { DataService, FilterCriteria } from "./DataService";
+import { DataService, FilterCriteria, UpdatePositions } from "./DataService";
 import { Request, Response } from "express";
 import { TableObject } from "./utils";
 
@@ -105,4 +105,41 @@ export class DataController {
         }
         res.json(result);
     };
+
+    updatePositions = async (
+        req: Request,
+        res: Response
+    ): Promise<void> => {
+        const result: ResultType<void> = {
+            message: "success",
+            data: undefined
+        }
+
+        try {
+            const positions: UpdatePositions = req.body
+            Service.updatePositions(positions.movedId, positions.newPosition)
+        } catch (error) {
+            result.message = "Error with save data, pls, check your request body"
+        }
+
+        res.json(result)
+    }
+
+    updateMultiplePostions = async (
+        req: Request,
+        res: Response
+    ): Promise<void> => {
+        const result: ResultType<void> = {
+            message: "success",
+            data: undefined
+        }
+        try {
+            const positions: Array<UpdatePositions> = req.body
+            Service.updateMultiplePostions(positions)    
+        } catch (error) {
+            result.message = "Error with save data, pls, check your request body"
+        }
+        
+        res.json(result)
+    }
 }

@@ -2,7 +2,7 @@
     <div class="small-card">
         <div class="content">
             <h4>{{ item.name }}</h4>
-            <small class="uuid">{{ shortUuid }}</small>
+            <small class="id">{{ shortid }}</small>
         </div>
         <button class="remove-btn" @click.stop="$emit('remove', item)">×</button>
     </div>
@@ -16,8 +16,8 @@ const props = defineProps<{
     item: TableObject
 }>()
 
-const shortUuid = computed(() => {
-    return props.item.uuid.substring(0, 8) + '...'
+const shortid = computed(() => {
+    return props.item.id.toString().substring(0, 8) + '...'
 })
 </script>
 
@@ -53,7 +53,7 @@ h4 {
     text-overflow: ellipsis;
 }
 
-.uuid {
+.id {
     color: #666;
     font-size: 0.75rem;
 }
