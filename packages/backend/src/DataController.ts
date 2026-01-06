@@ -1,145 +1,138 @@
-import { DataService, FilterCriteria, UpdatePositions } from "./DataService";
-import { Request, Response } from "express";
-import { TableObject } from "./utils";
+import { DataService, FilterCriteria, UpdatePositions } from "./DataService"
+import { Request, Response } from "express"
+import { TableObject } from "./utils"
 
 const Service = new DataService()
 
-type ResultType<T> = {
-    data: T;
-    message: string;
-}
 
 type PaginatedResult = {
     data: TableObject[],
     haveMore: boolean,
     message: string
-};
+}
+
+const sendResponse = (res: Response, status: number, data: any, message = 'success') => {
+    return res.status(status).json({ data, message })
+}
 
 export class DataController {
-    getAllData = async (req: Request, res: Response): Promise<void> => {
-        const result: ResultType<TableObject[]> = {
-            data: [],
-            message: "success"
-        };
-        try {
-            result.data = Service.getAllData();
-        } catch (error) {
-            result.data = [];
-            result.message = "Server error";
-        }
 
-        res.json(result);
-    };
+    private checkUpdatedPositions = (positions: UpdatePositions): boolean => {
+            return !(
+                positions.newPosition < 0 || positions.newPosition >= Service.getDataLength() || 
+                positions.movedId < 0 || positions.movedId >= Service.getDataLength() || 
+                positions.movedId === undefined || positions.newPosition === undefined
+            )
+    }
+
+    getAllData = async (req: Request, res: Response): Promise<void> => {
+        sendResponse(res, 403, Service.getAllData().splice(0, 10), 'Requesting all 1M items is forbidden. Use pagination.')
+    }
 
     getDataLength = async (req: Request, res: Response): Promise<void> => {
-        const result: ResultType<number> = {
-            data: 0,
-            message: "success"
-        };
         try {
-            result.data = Service.getDataLength();
+            const length = Service.getDataLength()
+            
+            sendResponse(res, 200, length)
         } catch (error) {
-            result.data = 0;
-            result.message = "Server error";
+            sendResponse(res, 500, null, "Server error")
         }
-        res.json(result);
-    };
+    }
 
     //    ожидаем в query параметре 'page'
     getPaginateData = async (req: Request, res: Response): Promise<void> => {
-        const result: PaginatedResult = {
-            data: [],
-            haveMore: true,
-            message: "success"
-        };
         try {
-            const page = parseInt(req.query.page as string, 10) || 1;
-            const paginateResult = Service.getPaginateData(page); 
-            result.data = paginateResult.data;
-            result.haveMore = paginateResult.haveMore;
-        } catch (error) {
-            result.data = [];
-            result.message = "Server error";
-        }
-        res.json(result);
-    };
+            const page = parseInt(req.query.page as string, 10) || 1
+            if (page < 1) { 
+                sendResponse(res, 400, null, "Page number must be greater than 0")
+                return
+            }
 
-    //    критерии передаются в теле запроса (JSON)
-    getFilteredData = async (
-        req: Request,
-        res: Response
-    ): Promise<void> => {
-        const result: ResultType<TableObject[]> = {
-            data: [],
-            message: "success"
-        };
-        try {
-            const criteria = req.body as FilterCriteria;
-            result.data = Service.getFilteredData(criteria);
+            const paginateResult = Service.getPaginateData(page) 
+            sendResponse(res, 200, paginateResult)
         } catch (error) {
-            result.data = [];
-            result.message = "Server error";
+            sendResponse(res, 500, null, "Server error")
         }
-        res.json(result);
-    };
+    }
 
-    //    критерии в теле, page в query
+    //    критерии и пагинация в query 
     getPaginateFilteredData = async (
         req: Request,
         res: Response
     ): Promise<void> => {
-        const result: PaginatedResult = {
-            data: [],
-            haveMore: true,
-            message: "success"
-        };
         try {
-            const page = parseInt(req.query.page as string, 10) || 1;
-            const criteria = req.body as FilterCriteria;
-            const filterResult = Service.getPaginateFilteredData(page, criteria); 
-            result.data = filterResult.data;
-            result.haveMore = filterResult.haveMore;
+            const page = parseInt(req.query.page as string, 10) || 1
+            const { id, name, value } = req.query
+            
+            const criteria: FilterCriteria = {}
+            if (id) criteria.id = Number(id)
+            if (name) criteria.name = String(name)
+            if (value) criteria.value = Number(value)
+            const filterResult = Service.getPaginateFilteredData(page, criteria) 
+            
+            sendResponse(res, 200, filterResult)
         } catch (error) {
-            result.data = [];
-            result.message = "Server error";
+            sendResponse(res, 500, null, "Server error")
         }
-        res.json(result);
-    };
+    }
 
     updatePositions = async (
         req: Request,
         res: Response
     ): Promise<void> => {
-        const result: ResultType<void> = {
-            message: "success",
-            data: undefined
-        }
-
         try {
             const positions: UpdatePositions = req.body
+
+            if (
+                this.checkUpdatedPositions(positions) === false
+            ) {
+                sendResponse(res, 400, null, "newPosition is out of bounds")
+                return
+            }
+
+
             Service.updatePositions(positions.movedId, positions.newPosition)
         } catch (error) {
-            result.message = "Error with save data, pls, check your request body"
+            sendResponse(res, 500, null, "Error with save data, pls, check your request body")
         }
-
-        res.json(result)
+        sendResponse(res, 200, null)
     }
 
     updateMultiplePostions = async (
         req: Request,
         res: Response
     ): Promise<void> => {
-        const result: ResultType<void> = {
-            message: "success",
-            data: undefined
-        }
         try {
             const positions: Array<UpdatePositions> = req.body
+            positions.forEach(pos => {
+                if (
+                    this.checkUpdatedPositions(pos) === false
+                ) {
+                    sendResponse(res, 400, null, "newPosition is out of bounds")
+                    return
+                }
+            })
             Service.updateMultiplePostions(positions)    
         } catch (error) {
-            result.message = "Error with save data, pls, check your request body"
+            sendResponse(res, 500, null, "Error with save data, pls, check your request body")
         }
-        
-        res.json(result)
+        sendResponse(res, 200, null)
+    }
+
+    sortDataByField = async (
+        req: Request, 
+        res: Response
+    ): Promise<void> => {
+        try {
+            const field = req.query.field as any;
+            if (!field) {
+                sendResponse(res, 400, null, "Field is required");
+                return;
+            }
+            const result = Service.sortDataByField(field);
+            sendResponse(res, 200, result, "Sorted successfully");
+        } catch (error) {
+            sendResponse(res, 500, null, "Sort failed");
+        }
     }
 }

@@ -9,23 +9,36 @@ export type UpdatePositions = {
 }
 
 export class DataService {
-    getAllData = (): TableObject[] => {
-        return allItem
+
+    private idMap = new Map<number, TableObject>()
+
+    constructor() {
+        this.syncIdMap()
     }
 
-    getDataLength = (): number => {
-        return allItem.length
+    private syncIdMap = () => {
+        this.idMap.clear()
+        for (const item of allItem) {
+            this.idMap.set(item.id, item)
+        }
     }
 
-    getPaginateData = (page=1): {data: TableObject[], haveMore: boolean} => {
-        const sortedItems = [...allItem].sort((a, b) => a.order - b.order);
-        const start = (page - 1) * pageSize;
-        const haveMore = start + pageSize < sortedItems.length;
-        
+    getAllData = (): TableObject[] => allItem
+
+    setAllData = (items: TableObject[]): void => {
+        updateAllItems(items)
+    }
+
+    getDataLength = (): number => allItem.length
+
+    getPaginateData = (page = 1): { data: TableObject[], haveMore: boolean } => {
+        const start = (page - 1) * pageSize
+        const data = allItem.slice(start, start + pageSize)
+
         return {
-            data: sortedItems.slice(start, start + pageSize),
-            haveMore
-        };
+            data,
+            haveMore: page * pageSize < allItem.length
+        }
     }
 
     getFilteredData = (criteria: FilterCriteria): TableObject[] => {
@@ -33,39 +46,34 @@ export class DataService {
             return (Object.entries(criteria) as [keyof TableObject, any][])
                 .every(([key, value]) => {
                     const field = item[key]
-
-                    if (typeof value === 'string' && typeof field === 'string') {
-                        return field.includes(value)
-                    }
-
-                    if (typeof value === 'number' && typeof field === 'number') {
-                        return field === value
-                    }
-
-                    return false
+                    return field.toString().toLowerCase().includes(value.toString().toLowerCase())
                 })
-            
+
         })
     }
 
-    getPaginateFilteredData = (page=1, criteria: FilterCriteria): {data: TableObject[], haveMore: boolean} => {
+    getPaginateFilteredData = (page = 1, criteria: FilterCriteria): { data: TableObject[], haveMore: boolean } => {
         const start = (page - 1) * pageSize
         const filteredData = this.getFilteredData(criteria)
-        const haveMore = ((page) * pageSize) < filteredData.length 
-        return {data: filteredData.slice(start, start + pageSize), haveMore}
+        const haveMore = ((page) * pageSize) < filteredData.length
+        return { data: filteredData.slice(start, start + pageSize), haveMore }
     }
 
     updatePositions = (movedId: number, newPostion: number): void => {
-        const items = [...allItem]
-        const moveIdItemIndex = items.findIndex(item => item.id === movedId)
-        if (moveIdItemIndex === -1) return
-        
+        const items = [...allItem] 
+        const movedIdItem = this.idMap.get(movedId)
+        if (!movedIdItem) return
+        const moveIdItemIndex = movedIdItem.order // буквально order это текущий индекс
+
         const [movedItem] = items.splice(moveIdItemIndex, 1)
         items.splice(newPostion, 0, movedItem)
 
-        items.forEach((item, index) => {
-            item.order = index
-        }) 
+        const startUpdateIndex = Math.min(moveIdItemIndex, newPostion)
+        const endUpdateIndex = Math.max(moveIdItemIndex, newPostion)
+        
+        for (let i = startUpdateIndex; i < endUpdateIndex; i++) {
+            items[i].order = i
+        }
 
         updateAllItems(items)
     }
@@ -73,7 +81,7 @@ export class DataService {
     updateMultiplePostions = (updates: Array<UpdatePositions>): void => {
         let items = [...allItem]
 
-        updates.forEach(({movedId, newPosition}) => {
+        updates.forEach(({ movedId, newPosition }) => {
             const movedIndex = items.findIndex(item => item.id === movedId)
             if (movedIndex === -1) return
 
@@ -86,5 +94,23 @@ export class DataService {
         })
 
         updateAllItems(items)
+    }
+
+    sortDataByField = (field: keyof TableObject): TableObject[] => {
+        const data = this.getAllData()
+
+        data.sort((a, b) => {
+            if (a[field] < b[field]) return -1
+            if (a[field] > b[field]) return 1
+            return 0
+        })
+
+        this.setAllData(data)
+
+        data.forEach((item, index) => {
+            item.order = index
+        })
+
+        return data.slice(0, pageSize)
     }
 }

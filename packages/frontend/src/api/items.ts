@@ -8,10 +8,10 @@ const api = axios.create({
 })
 
 export async function fetchItems(page: number, criteria: FilterCriteria) {
-    const response = await api.post<{
+    const response = await api.get<{
         data: TableObject[]
         haveMore: boolean
-    }>(`/data/filter/page?page=${page}`, criteria)
+    }>(`/data/filter/page?page=${page}`)
 
     return response.data
 }

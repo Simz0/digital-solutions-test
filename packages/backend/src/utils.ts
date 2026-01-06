@@ -1,5 +1,4 @@
-import {v4 as uuidv4} from 'uuid'
-import {faker} from '@faker-js/faker'
+import {faker} from '@faker-js/faker' // Смешные имена ха-ха... ха
 
 export type TableObject = {
     name: string,
@@ -12,7 +11,7 @@ export type TableObject = {
 const generateValue = (order: number): TableObject => {
     const newValue: TableObject = {
         name: faker.person.fullName(),
-        value: Math.random() * 1000000,
+        value: Math.random() * 1000000, // Миллионы миллионы миллионы алых роз....
         id: order,
         order: order
     }
@@ -27,4 +26,5 @@ const makeList = (range=1000000): TableObject[] => {
 export function updateAllItems(items: TableObject[]): void {
     allItem = items
 }
-export let allItem: TableObject[] = makeList()
+
+export let allItem: TableObject[] = makeList() // В целом глобальная переменная - не очень хорошо, но для демо пойдет
